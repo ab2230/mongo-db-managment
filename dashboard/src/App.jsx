@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 
 const API = 'http://localhost:3001';
 
@@ -181,6 +182,31 @@ function App() {
     }
   };
 
+  const exportToExcel = () => {
+    if (filteredData.length === 0) {
+      alert('No data to export.');
+      return;
+    }
+
+    // Sanitize data for Excel export
+    const dataToExport = filteredData.map(doc => {
+      const newDoc = {};
+      for (const key in doc) {
+        if (typeof doc[key] === 'object' && doc[key] !== null) {
+          newDoc[key] = JSON.stringify(doc[key]);
+        } else {
+          newDoc[key] = doc[key];
+        }
+      }
+      return newDoc;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, selected || 'Sheet1');
+    XLSX.writeFile(workbook, `${selected || 'export'}.xlsx`);
+  };
+
   return (
     <div className="p-6 font-sans">
       <h1 className="text-2xl font-bold mb-4">MongoDB Dashboard</h1>
@@ -348,6 +374,14 @@ function App() {
                   ) : (
                     'Drop Collection'
                   )}
+                </button>
+
+                <button 
+                  className="bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600 disabled:opacity-50"
+                  onClick={exportToExcel}
+                  disabled={filteredData.length === 0}
+                >
+                  Export to Excel
                 </button>
               </div>
 
